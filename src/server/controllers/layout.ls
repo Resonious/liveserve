@@ -16,6 +16,7 @@ exports.standard = (content, options) ->
 
     <head>
       <meta charset="UTF-8" />
+      <script src="exports.js"></script
       #{gather-scripts options.scripts}
       <title>#{options.title or 'Crattle Crute!'}</title>
     </head>

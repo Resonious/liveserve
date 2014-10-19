@@ -6,11 +6,81 @@ class ServerError extends Error
     @code = 500
     @message = message
 
+class Render
+  content: ''
+  head: false
+
+  (arg) ->
+    return if arg is undefined
+    switch typeof arg
+    | 'object' =>
+      @content = arg.content
+      @head    = arg.head
+    | 'string' =>
+      @content = arg
+
+print-error = (error, response, path) !->
+  if error is undefined
+    console.log "UNDEFINED WAS THROWN"
+    console.log (new Error).stack
+    response.write-head 500
+    response.end!
+    return
+  if error.message is undefined or error.code is undefined
+    console.log "UNKNOWN ERROR #error"
+    console.log error.stack
+    response.write-head 500
+    response.end!
+    return
+
+  console.log ''
+  console.log "vvvERRORvvv"
+  console.log error.message
+  console.log "^^^ERROR^^^"
+
+  response.write-head error.code, {"Content-Type": "text/plain"}
+  response.write error.message
+
 render = (controller, params) -->
-  match typeof controller.render
-  | (is 'string')   => controller.render
-  | (is 'function') => controller.render!
-  | otherwise => throw new ServerError("Invalid controller #controller")
+  error = -> throw new ServerError("Invalid controller #controller")
+
+  const r = switch typeof controller
+  | 'function' => controller(params)
+  | 'object' =>
+    match typeof controller.render
+    | 'string'   => controller.render
+    | 'object'   => controller.render
+    | 'function' => controller.render(params)
+    | otherwise => error!
+  | otherwise => error!
+
+  new Render(r)
+
+handle-by-controller = (method, path, response) ->
+  controller, path-params <- router.route(method, path)
+  path-params.path = path
+  const rendered = render controller, path-params
+
+  response.write-head 200, (rendered.head or {"Content-Type": "text/html"})
+  response.write(rendered.content)
+
+  # TODO http params as well as path-params (which don't even exist anyway!)
+
+mime-type-from = (path) ->
+  const extension = path.substr path.last-index-of('.')
+  switch extension
+  | '.js'   => 'text/javascript'
+  | '.png'  => 'image/png'
+  | '.html' => 'text/html'
+
+handle-static-file = (path, response) ->
+  console.log "Serving up static file at #path"
+  response.write-head 200, {"Content-Type": mime-type-from path}
+  response.write fs.read-file-sync(path, 'utf8')
+
+# NOTE: This assumes the server is being run from the project root.
+public-file = (path) -> "site/public#path"
+client-file = (path) -> "site/client#path"
 
 exports.start = !->
   const port = 8080
@@ -22,26 +92,23 @@ exports.start = !->
     const method = request.method
 
     try
-      controller, path-params <- router.route(method, path)
-      response.write-head 200, {"Content-Type": "text/html"}
-      response.write(render controller, path-params)
-      # TODO http params as well as path-params (which don't even exist anyway!)
+      switch
+      | router.route-exists-for method, path =>
+          handle-by-controller method, path, response
+      
+      | method is 'GET' and fs.exists-sync public-file path =>
+          handle-static-file (public-file path), response
+      
+      | method is 'GET' and fs.exists-sync client-file path =>
+          handle-static-file (client-file path), response
+
+      | otherwise =>
+          throw new router.RoutingError("No file or controller for #path")
 
     catch error
-      if error.message is undefined or error.code is undefined
-        console.log "UNKNOWN ERROR #error"
-        console.log error.stack
-        response.end!
-        return
+      print-error(error, response, path)
 
-      console.log ''
-      console.log "vvvERRORvvv"
-      console.log error.message
-      console.log "^^^ERROR^^^"
-
-      response.write-head error.code, {"Content-Type": "text/plain"}
-      response.write error.message
-
+    console.log '========================================================'
     response.end!
 
   .listen port
