@@ -1,0 +1,1 @@
+lsc -wco site src

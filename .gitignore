@@ -1,0 +1,8 @@
+# Logs (don't even have any of these wtf)
+logs
+*.log
+
+# Compiled server/game javascript not needed
+site/client/**/*.js
+site/server/**/*.js
+site/shared/**/*.js
