@@ -1,5 +1,6 @@
 require! <[http url fs]>
 require! './router'
+require! '../shared/globals'
 
 class ServerError extends Error
   (message) ->
@@ -82,6 +83,16 @@ handle-static-file = (path, response) ->
 public-file = (path) -> "site/public#path"
 client-file = (path) -> "site/client#path"
 
+is-valid-shared-file = (path) ->
+  | (path.index-of '/shared/') is 0 and fs.exists-sync "site#path" =>
+    "site#path"
+
+is-valid-client-file = (path) ->
+  | (path.index-of '/client/') is 0 and fs.exists-sync "site#path" =>
+    "site#path"
+  | fs.exists-sync client-file path =>
+    client-file path
+
 exports.start = !->
   const port = 8080
 
@@ -94,16 +105,26 @@ exports.start = !->
     try
       switch
       | router.route-exists-for method, path =>
-          handle-by-controller method, path, response
+        handle-by-controller method, path, response
       
-      | method is 'GET' and fs.exists-sync public-file path =>
+      | method is 'GET' =>
+        switch
+        | fs.exists-sync public-file path =>
           handle-static-file (public-file path), response
-      
-      | method is 'GET' and fs.exists-sync client-file path =>
-          handle-static-file (client-file path), response
+        
+        | (p = is-valid-shared-file path) or p =>
+          console.log p
+          handle-static-file p, response
+
+        | (p = is-valid-client-file path) or p =>
+          console.log p
+          handle-static-file p, response
+
+        | otherwise =>
+          throw new router.RoutingError("No file or controller for #path")
 
       | otherwise =>
-          throw new router.RoutingError("No file or controller for #path")
+        throw new router.RoutingError("No file or controller for #path")
 
     catch error
       print-error(error, response, path)

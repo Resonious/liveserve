@@ -1,3 +1,3 @@
-bang = require('./testfold/bang')
+require! '../shared/shared-test'
 
-console.log bang.prop
+console.log shared-test.test-val
