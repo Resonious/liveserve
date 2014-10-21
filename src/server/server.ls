@@ -88,6 +88,10 @@ is-valid-shared-file = (path) ->
     "site#path"
 
 is-valid-client-file = (path) ->
+  # TODO This actually kind of sucks. We don't want the browser to
+  # download 2 copies of the same file if the app queries /client/name.js
+  # and /name.js.
+  # Before going overboard, change all client /* queries to /client/*
   | (path.index-of '/client/') is 0 and fs.exists-sync "site#path" =>
     "site#path"
   | fs.exists-sync client-file path =>

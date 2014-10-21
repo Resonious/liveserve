@@ -1,4 +1,4 @@
-{take-while} = prequire 'prelude-ls' # No prelude! here because that is defined after this
+{split, join} = prequire 'prelude-ls' # No prelude! here because that is defined after this
 
 @is-client = true
 @loaded-modules = new HashMap()
@@ -19,11 +19,20 @@
 
   switch
   | (path.index-of './') is 0 =>
-    const base-path = take-while (isnt '/'), @current-path
+    const base-path = @current-path.substring 0, @current-path.last-index-of '/'
     real-path := path.replace './', base-path
   
   | (path.index-of '../') is 0 =>
-    real-path := path.substr 3
+    # TODO This has not been tested
+    const base-dirs = split '/' @current-path
+    const path-dirs = split '/' path
+
+    const target = for i in [0 til path-dirs.length]
+      switch path-dirs[i]
+      | '../'     => base-dirs[i]
+      | otherwise => path-dirs[i]
+
+    real-path := join '/' target
 
   | otherwise => throw "Not sure what to do with require(#path)"  
 
@@ -32,9 +41,3 @@
     throw "TODO Couldn't find #real-path. Ajax that shit"
   else
     return val
-
-  # console.log "requiring #key"
-  # val = undefined
-  # @loaded-modules.for-each (value, key) ->
-  #   return val := value if (search.index-of key) > -1
-  # val
