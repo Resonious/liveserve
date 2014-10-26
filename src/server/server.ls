@@ -97,12 +97,15 @@ is-valid-client-file = (path) ->
   | fs.exists-sync client-file path =>
     client-file path
 
+var server
+
 exports.start = !->
   const port = 8080
 
+  console.log 'Server started!'
   require('./routes')
 
-  http.create-server (request, response) ->
+  server := http.create-server (request, response) ->
     const path = (url.parse request.url).pathname
     const method = request.method
 
@@ -133,9 +136,34 @@ exports.start = !->
     catch error
       print-error(error, response, path)
 
-    console.log '========================================================'
+    console.log '-------------------------------------------------------------'
     response.end!
 
-  .listen port
+  server.listen port
+  process.on 'exit' server~close
+  server.on 'close' ->
+    try
+      process.exit 0
+    catch error
 
   console.log "Up and running on port #{port}!"
+
+process.on 'message' (message) ->
+    switch message.type
+    | \start =>
+      exports.start!
+
+    | \unrequire =>
+      console.log 'Clearing require cache'
+      for key in Object.keys(require.cache)
+        delete require.cache[key]
+    
+    | \close =>
+      console.log 'bye'
+      try
+        server.close!
+      catch e
+        process.kill!
+    
+    | otherwise =>
+      console.log "got message #message ???"
