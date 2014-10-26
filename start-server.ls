@@ -1,4 +1,5 @@
-{exec, fork, spawn} = require('child_process')
+{fork} = require('child_process')
+spawn = require('win-spawn')
 {last, each, split} = require('prelude-ls')
 require! 'fs'
 require! 'rimraf'
@@ -35,15 +36,24 @@ function start-server
 
 # ======================== Build Watch =======================
 
+var build
+restarting-build = false
+
 function start-build-process
   console.log 'Starting build watch process...'
 
-  exec 'lsc -wco site src'
+  # build := exec 'lsc -wco site src'
+  build := spawn 'lsc', <[-wco site src]>
     ..stdout.on 'data' print-from('BUILD')
     ..stderr.on 'data' print-from('BUILD')
 
     ..on 'close' (code) ->
-      console.log "Build process closed with code #code"
+      if restarting-build
+        console.log 'Restarting build process...'
+        restarting-build := false
+      else
+        console.log "Build process closed with code #code"
+      
       start-build-process!
 
     ..stdout.on 'data' (content) ->
@@ -74,11 +84,29 @@ set-timeout start-server, 500
 
 # =========================== Input ===============================
 
-let print = print-from 'COMMAND'
+let print = (-> print-from 'COMMAND', "#it\n")
   process.stdin
     ..set-encoding 'utf8'
     ..on 'readable' ->
-      switch process.stdin.read!
-      | \rebuild =>
-        <[./site/client ./site/shared ./site/server]> |> each (er) ->
-          print er if er
+      const input = process.stdin.read!
+      return unless input
+      
+      switch input.trim!
+      | '' =>
+
+      | \clean =>
+        count = 0
+        <[./site/client ./site/shared ./site/server]> |> each (path) ->
+          rimraf path, (err) ->
+            print err if err
+            count := count + 1
+            if count >= 3
+              count := 0
+              console.log "Cleared compiled files. I recommend you restart this thing."
+              # restarting-build := true
+              # console.log build.killed
+              # process.kill build.pid, \SIGINT
+              # console.log build.killed
+
+      | otherwise =>
+        print "Don't know what you mean by #that" unless that is null
