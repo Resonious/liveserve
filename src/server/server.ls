@@ -1,6 +1,7 @@
 require! <[http url fs]>
 require! './router'
 require! '../shared/globals'
+{any} = require('prelude-ls')
 
 class ServerError extends Error
   (message) ->
@@ -83,19 +84,17 @@ handle-static-file = (path, response) ->
 public-file = (path) -> "site/public#path"
 client-file = (path) -> "site/client#path"
 
-is-valid-shared-file = (path) ->
-  | (path.index-of '/shared/') is 0 and fs.exists-sync "site#path" =>
+is-valid-file = (path, type) -->
+  console.log "type: #type"
+  console.log "path: #path"
+  switch
+  | (path.index-of '/#type/') is 0 and fs.exists-sync "site#path" =>
     "site#path"
+  | otherwise => undefined
 
-is-valid-client-file = (path) ->
-  # TODO This actually kind of sucks. We don't want the browser to
-  # download 2 copies of the same file if the app queries /client/name.js
-  # and /name.js.
-  # Before going overboard, change all client /* queries to /client/*
-  | (path.index-of '/client/') is 0 and fs.exists-sync "site#path" =>
-    "site#path"
-  | fs.exists-sync client-file path =>
-    client-file path
+is-valid-static = (path) ->
+  <[client shared]> |> any (type) ->
+    (path.index-of "/#type/") is 0 and fs.exists-sync "site#path"
 
 var server
 
@@ -119,13 +118,8 @@ exports.start = !->
         | fs.exists-sync public-file path =>
           handle-static-file (public-file path), response
         
-        | (p = is-valid-shared-file path) or p =>
-          console.log p
-          handle-static-file p, response
-
-        | (p = is-valid-client-file path) or p =>
-          console.log p
-          handle-static-file p, response
+        | is-valid-static path
+          handle-static-file "site#path", response
 
         | otherwise =>
           throw new router.RoutingError("No file or controller for #path")

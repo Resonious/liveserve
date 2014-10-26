@@ -18,7 +18,7 @@ exports.standard = (content, options) ->
       <meta charset="UTF-8" />
       <script src="prelude.min.js"></script>
       <script src="hashmap.js"></script>
-      <script src="exports.js"></script>
+      <script src="client/exports.js"></script>
       <script src="shared/globals.js"></script>
       #{gather-scripts options.scripts}
       <title>#{options.title or 'Crattle Crute!'}</title>

@@ -5,4 +5,4 @@ exports.render =
     <h1>Heyyyyyyyy world, how's it going?!</h1>
     DaMN! I GOT THIS
   """, 
-    scripts: <[shared/shared-test.js test-client.js]>
+    scripts: <[shared/shared-test.js client/test-client.js]>
