@@ -6,4 +6,4 @@ exports.render =
     DaMN! I GOT THIS
   """, 
 
-    scripts: <[shared/shared-test.js client/test-client.js]>
+    scripts: <[shared/shared-test.js client/test/test-client.js client/base-test.js]>
