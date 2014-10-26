@@ -1,6 +1,7 @@
 {exec, fork, spawn} = require('child_process')
 {last, each, split} = require('prelude-ls')
 require! 'fs'
+require! 'rimraf'
 
 last-source = ''
 
@@ -70,3 +71,14 @@ function on-file-changed filename
 # =========================
 start-build-process!
 set-timeout start-server, 500
+
+# =========================== Input ===============================
+
+let print = print-from 'COMMAND'
+  process.stdin
+    ..set-encoding 'utf8'
+    ..on 'readable' ->
+      switch process.stdin.read!
+      | \rebuild =>
+        <[./site/client ./site/shared ./site/server]> |> each (er) ->
+          print er if er
