@@ -112,12 +112,12 @@ exports.start = !->
       switch
       | router.route-exists-for method, path =>
         handle-by-controller method, path, response
-      
+
       | method is 'GET' =>
         switch
         | fs.exists-sync public-file path =>
           handle-static-file (public-file path), response
-        
+
         | is-valid-static path
           handle-static-file "site#path", response
 
