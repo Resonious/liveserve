@@ -24,15 +24,20 @@
   
   | (path.index-of '../') is 0 =>
     # TODO This has not been tested
-    const base-dirs = split '/' @current-path
+    const base-dirs = [''] ++ split '/' @current-path
     const path-dirs = split '/' path
+
+    console.log base-dirs
+    console.log path-dirs
 
     const target = for i in [0 til path-dirs.length]
       switch path-dirs[i]
-      | '../'     => base-dirs[i]
+      | '..'     => base-dirs[i]
       | otherwise => path-dirs[i]
 
     real-path := join '/' target
+    console.log real-path
+    real-path
 
   | otherwise => throw "Not sure what to do with require(#path)"  
 
