@@ -7,15 +7,13 @@ gather-scripts = (scripts) ->
 
 exports.standard = (content, options) ->
   options = {} if options is undefined
-  # TODO
-  # Add a <script> tag for some kind of 'require' replacement for 
-  # in-browser javascript.....
   """
   <!DOCTYPE html>
   <html>
 
     <head>
       <meta charset="UTF-8" />
+      <script src="http://code.jquery.com/jquery-2.1.1.js"></script>
       <script src="prelude.min.js"></script>
       <script src="hashmap.js"></script>
       <script src="client/exports.js"></script>
