@@ -42,7 +42,6 @@ restarting-build = false
 function start-build-process
   console.log 'Starting build watch process...'
 
-  # build := exec 'lsc -wco site src'
   build := spawn 'lsc', <[-wco site src]>
     ..stdout.on 'data' print-from('BUILD')
     ..stderr.on 'data' print-from('BUILD')
