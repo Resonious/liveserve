@@ -6,3 +6,5 @@ logs
 site/client/**/*.js
 site/server/**/*.js
 site/shared/**/*.js
+
+node_modules
